@@ -1,0 +1,22 @@
+witmotion_standard_protocol_driver_node:
+  device_port_name:
+    type: string
+    default_value: /dev/ttyUSB0
+  serial_baud_rate:
+    type: int
+    default_value: 921600
+  serial_device_id:
+    type: int
+    default_value: 80
+  frame_id:
+    type: string
+    default_value: witmotion_std
+  proc_serial_frequency:
+    type: double
+    default_value: 1000.0
+  publish_frequency:
+    type: double
+    default_value: 500.0
+  angle_to_quaternion:
+    type: bool
+    default_value: true
