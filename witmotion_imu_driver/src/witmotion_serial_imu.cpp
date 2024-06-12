@@ -1,18 +1,41 @@
+// MIT License
+//
+// Copyright (c) 2024 Naoki Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 #include "witmotion_serial_imu.hpp"
 
 #include <memory>
 #include <numeric>
 
-#include "serial_port_options.hpp"
 #include "serial_port.hpp"
+#include "serial_port_options.hpp"
 
 namespace witmotion_imu_driver
 {
 WitmotionSerialImu::WitmotionSerialImu(
-  boost::asio::io_context & io_context, const SerialPortOptions & options,
+  boost::asio::io_context & io_context,
+  const SerialPortOptions & options,
   const std::uint8_t device_id)
 : options_(options),
-  communication_type_(CommunicationType::STANDARD),
+  communication_type_(CommunicationType::kStandard),
   device_id_(device_id),
   gravity_(9.82F),
   serial_port_(std::make_unique<SerialPort>(io_context, options)),
@@ -58,12 +81,12 @@ constexpr std::uint8_t kTypeAngularVelocityHeader = 0x52;
 constexpr std::uint8_t kTypeAngleHeader = 0x53;
 constexpr std::uint8_t kTypeMagneticFieldHeader = 0x54;
 
-const SerialPort::Message getRequestUnlock()
+SerialPort::Message getRequestUnlock()
 {
   return {0xFF, 0xAA, 0x64, 0x88, 0xB5};
 }
 
-const SerialPort::Message getRequestSave()
+SerialPort::Message getRequestSave()
 {
   return {0xFF, 0xAA, 0x00, 0x00, 0x00};
 }
@@ -71,8 +94,8 @@ const SerialPort::Message getRequestSave()
 inline float convertDoubleByteToFloat(const std::uint8_t a, const std::uint8_t b)
 {
   std::uint16_t c = (a << 8) | b;
-  short ret;
-  std::memcpy(&ret, &c, sizeof(short));
+  std::int16_t ret = 0;
+  std::memcpy(&ret, &c, sizeof(std::int16_t));
   return static_cast<float>(ret);
 }
 
@@ -113,8 +136,7 @@ inline void parseAngle(
   version = convertDoubleByteToFloat(msg[9], msg[8]);
 }
 
-inline void parseMagneticField(
-  Eigen::Vector3f & magnetic_field, const SerialPort::Message & msg)
+inline void parseMagneticField(Eigen::Vector3f & magnetic_field, const SerialPort::Message & msg)
 {
   magnetic_field = parseVector3(msg);
 }
@@ -144,12 +166,12 @@ const Eigen::Vector3f & WitmotionSerialImu::getMagneticField()
   return magnetic_field_;
 }
 
-float WitmotionSerialImu::getTemperature()
+float WitmotionSerialImu::getTemperature() const
 {
   return temperature_;
 }
 
-float WitmotionSerialImu::getVoltage()
+float WitmotionSerialImu::getVoltage() const
 {
   return voltage_;
 }
@@ -176,14 +198,14 @@ bool WitmotionSerialImu::isUpdatedMagneticField() const
 
 void WitmotionSerialImu::procSerialStream()
 {
-  if (communication_type_ == CommunicationType::STANDARD) {
+  if (communication_type_ == CommunicationType::kStandard) {
     constexpr std::size_t kProcMsgs = 4;
     constexpr std::size_t kMsgLength = 11;
     static SerialPort::Message header_msg{standard::kTypeProtocolHeader};
     for (unsigned int i = 0; i < kProcMsgs; ++i) {
       loadSerialMsg(serial_port_->read(kMsgLength, header_msg));
     }
-  } else if (communication_type_ == CommunicationType::MODBUS) {
+  } else if (communication_type_ == CommunicationType::kModbus) {
     throw std::logic_error("Not supported Modbus");
   }
 }
@@ -216,4 +238,4 @@ void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
       break;
   }
 }
-}  // namespace witmotion_serial_imu
+}  // namespace witmotion_imu_driver

@@ -1,16 +1,38 @@
-#include <memory>
+// MIT License
+//
+// Copyright (c) 2024 Naoki Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include <Eigen/Dense>
 #include <chrono>
 #include <functional>
+#include <memory>
 
 #include <boost/asio/io_context.hpp>
-#include <Eigen/Dense>
+#include <geometry_msgs/msg/accel_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <std_msgs/msg/header.hpp>
-#include <std_msgs/msg/float32.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
-#include <geometry_msgs/msg/accel_stamped.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/header.hpp>
 #include <witmotion_standard_protocol_driver_node_params.hpp>
 
 #include "serial_port_options.hpp"
@@ -23,7 +45,7 @@ class WitmotionStandardProtocolDriverNode : public rclcpp::Node
 public:
   WitmotionStandardProtocolDriverNode() = delete;
   explicit WitmotionStandardProtocolDriverNode(const rclcpp::NodeOptions &);
-  ~WitmotionStandardProtocolDriverNode();
+  ~WitmotionStandardProtocolDriverNode() override;
 
 private:
   boost::asio::io_context io_context_;
@@ -47,7 +69,7 @@ private:
 WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
   const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("witmotion_standard_protocol_driver", node_options),
-  io_context_(),
+
   imu_publisher_(nullptr),
   proc_imu_state_timer_(nullptr),
   publish_imu_state_timer_(nullptr),
@@ -63,18 +85,15 @@ WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
     param_listener_->get_params());
 
   imu_publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("~/imu/raw", 3);
-  temperature_publisher_ = this->create_publisher<sensor_msgs::msg::Temperature>(
-    "~/temperature", 3);
-  voltage_publisher_ = this->create_publisher<std_msgs::msg::Float32>(
-    "~/voltage", 3);
+  temperature_publisher_ =
+    this->create_publisher<sensor_msgs::msg::Temperature>("~/temperature", 3);
+  voltage_publisher_ = this->create_publisher<std_msgs::msg::Float32>("~/voltage", 3);
 
   SerialPortOptions serial_port_options;
   serial_port_options.device_port_name = params_->device_port_name;
   serial_port_options.baud_rate = params_->serial_baud_rate;
   witmotion_serial_imu_ = std::make_unique<WitmotionSerialImu>(
-    io_context_,
-    serial_port_options,
-    params_->serial_device_id);
+    io_context_, serial_port_options, params_->serial_device_id);
 
   if (witmotion_serial_imu_->isConnected()) {
     RCLCPP_INFO_STREAM(
