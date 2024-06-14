@@ -95,6 +95,8 @@ WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
   witmotion_serial_imu_ = std::make_unique<WitmotionSerialImu>(
     io_context_, serial_port_options);
 
+  witmotion_serial_imu_->setGravityParam(params_->gravity);
+
   if (witmotion_serial_imu_->isConnected()) {
     RCLCPP_INFO_STREAM(
       this->get_logger(), "Connect serial device " << params_->device_port_name << " successful");

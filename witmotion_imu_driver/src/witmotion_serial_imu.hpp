@@ -50,6 +50,9 @@ public:
   bool connect();
   bool isConnected();
 
+  float getGravityParam() const;
+  void setGravityParam(float gravity);
+
   const Eigen::Vector3f & getAcceleleration();
   const Eigen::Vector3f & getAngularVelocity();
   const Eigen::Vector3f & getAngle();

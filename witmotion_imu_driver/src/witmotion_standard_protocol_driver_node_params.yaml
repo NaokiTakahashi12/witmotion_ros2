@@ -8,6 +8,9 @@ witmotion_standard_protocol_driver_node:
   frame_id:
     type: string
     default_value: witmotion_imu_link
+  gravity:
+    type: double
+    default_value: 9.82
   proc_serial_frequency:
     type: double
     default_value: 1000.0

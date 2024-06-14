@@ -57,6 +57,16 @@ bool WitmotionSerialImu::isConnected()
   return serial_port_->isOpen();
 }
 
+float WitmotionSerialImu::getGravityParam() const
+{
+  return gravity_;
+}
+
+void WitmotionSerialImu::setGravityParam(float gravity)
+{
+  gravity_ = gravity;
+}
+
 namespace standard
 {
 constexpr unsigned int kMessageHeaderIndex = 0;
