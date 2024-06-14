@@ -44,16 +44,11 @@ public:
 
   WitmotionSerialImu() = delete;
   explicit WitmotionSerialImu(
-    boost::asio::io_context &, const SerialPortOptions &, std::uint8_t device_id);
+    boost::asio::io_context &, const SerialPortOptions &);
   ~WitmotionSerialImu() = default;
 
   bool connect();
   bool isConnected();
-  void changeDeviceId(std::uint8_t device_id);
-  std::uint8_t getDeviceId() const;
-
-  bool searchDevice();
-  bool searchDevice(std::uint8_t overrite_device_id);
 
   const Eigen::Vector3f & getAcceleleration();
   const Eigen::Vector3f & getAngularVelocity();
@@ -73,7 +68,6 @@ private:
   const SerialPortOptions options_;
   const CommunicationType communication_type_;
 
-  std::uint8_t device_id_;
   float gravity_;
 
   std::unique_ptr<SerialPort> serial_port_;

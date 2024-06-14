@@ -32,11 +32,9 @@ namespace witmotion_imu_driver
 {
 WitmotionSerialImu::WitmotionSerialImu(
   boost::asio::io_context & io_context,
-  const SerialPortOptions & options,
-  const std::uint8_t device_id)
+  const SerialPortOptions & options)
 : options_(options),
   communication_type_(CommunicationType::kStandard),
-  device_id_(device_id),
   gravity_(9.82F),
   serial_port_(std::make_unique<SerialPort>(io_context, options)),
   acceleration_updated_(false),
@@ -57,16 +55,6 @@ bool WitmotionSerialImu::connect()
 bool WitmotionSerialImu::isConnected()
 {
   return serial_port_->isOpen();
-}
-
-void WitmotionSerialImu::changeDeviceId(const std::uint8_t device_id)
-{
-  device_id_ = device_id;
-}
-
-std::uint8_t WitmotionSerialImu::getDeviceId() const
-{
-  return device_id_;
 }
 
 namespace standard
