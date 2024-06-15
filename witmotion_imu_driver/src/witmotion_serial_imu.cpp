@@ -91,7 +91,7 @@ SerialPort::Message getRequestSave()
 
 inline float convertDoubleByteToFloat(const std::uint8_t a, const std::uint8_t b)
 {
-  std::uint16_t c = (a << 8) | b;
+  const std::uint16_t c = (a << 8) | b;
   std::int16_t ret = 0;
   std::memcpy(&ret, &c, sizeof(std::int16_t));
   return static_cast<float>(ret);
