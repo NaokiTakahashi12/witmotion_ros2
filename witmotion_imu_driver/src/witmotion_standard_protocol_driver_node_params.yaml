@@ -5,12 +5,12 @@ witmotion_standard_protocol_driver_node:
   serial_baud_rate:
     type: int
     default_value: 921600
-  serial_device_id:
-    type: int
-    default_value: 80
   frame_id:
     type: string
-    default_value: witmotion_std
+    default_value: witmotion_imu_link
+  gravity:
+    type: double
+    default_value: 9.82
   proc_serial_frequency:
     type: double
     default_value: 1000.0

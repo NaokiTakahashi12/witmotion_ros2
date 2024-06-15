@@ -132,12 +132,12 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
       read_counter++;
     } else if (read_byte == header[read_counter]) {
       read_counter++;
+      if (read_counter >= header.size()) {
+        found_start = true;
+      }
     } else {
       continue_counter++;
       read_counter = 0;
-    }
-    if (read_counter >= header.size()) {
-      found_start = true;
     }
   }
   return msg;

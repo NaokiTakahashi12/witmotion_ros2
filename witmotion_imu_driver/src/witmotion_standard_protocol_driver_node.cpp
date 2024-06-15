@@ -93,7 +93,9 @@ WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
   serial_port_options.device_port_name = params_->device_port_name;
   serial_port_options.baud_rate = params_->serial_baud_rate;
   witmotion_serial_imu_ = std::make_unique<WitmotionSerialImu>(
-    io_context_, serial_port_options, params_->serial_device_id);
+    io_context_, serial_port_options);
+
+  witmotion_serial_imu_->setGravityParam(params_->gravity);
 
   if (witmotion_serial_imu_->isConnected()) {
     RCLCPP_INFO_STREAM(

@@ -32,11 +32,9 @@ namespace witmotion_imu_driver
 {
 WitmotionSerialImu::WitmotionSerialImu(
   boost::asio::io_context & io_context,
-  const SerialPortOptions & options,
-  const std::uint8_t device_id)
+  const SerialPortOptions & options)
 : options_(options),
   communication_type_(CommunicationType::kStandard),
-  device_id_(device_id),
   gravity_(9.82F),
   serial_port_(std::make_unique<SerialPort>(io_context, options)),
   acceleration_updated_(false),
@@ -59,14 +57,14 @@ bool WitmotionSerialImu::isConnected()
   return serial_port_->isOpen();
 }
 
-void WitmotionSerialImu::changeDeviceId(const std::uint8_t device_id)
+float WitmotionSerialImu::getGravityParam() const
 {
-  device_id_ = device_id;
+  return gravity_;
 }
 
-std::uint8_t WitmotionSerialImu::getDeviceId() const
+void WitmotionSerialImu::setGravityParam(float gravity)
 {
-  return device_id_;
+  gravity_ = gravity;
 }
 
 namespace standard
@@ -93,7 +91,7 @@ SerialPort::Message getRequestSave()
 
 inline float convertDoubleByteToFloat(const std::uint8_t a, const std::uint8_t b)
 {
-  std::uint16_t c = (a << 8) | b;
+  const std::uint16_t c = (a << 8) | b;
   std::int16_t ret = 0;
   std::memcpy(&ret, &c, sizeof(std::int16_t));
   return static_cast<float>(ret);
