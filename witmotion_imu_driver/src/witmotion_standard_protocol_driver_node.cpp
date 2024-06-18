@@ -34,9 +34,8 @@
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/header.hpp>
 #include <witmotion_standard_protocol_driver_node_params.hpp>
-
-#include "serial_port_options.hpp"
-#include "witmotion_serial_imu.hpp"
+#include <witmotion_imu_driver_core/serial_port_options.hpp>
+#include <witmotion_imu_driver_core/witmotion_serial_imu.hpp>
 
 namespace witmotion_imu_driver
 {
@@ -60,7 +59,7 @@ private:
   std::unique_ptr<witmotion_standard_protocol_driver_node::ParamListener> param_listener_;
   std::unique_ptr<witmotion_standard_protocol_driver_node::Params> params_;
 
-  std::unique_ptr<WitmotionSerialImu> witmotion_serial_imu_;
+  std::unique_ptr<witmotion_imu_driver_core::WitmotionSerialImu> witmotion_serial_imu_;
 
   void procSerialImuTimerCallback();
   void publishImuStateTimerCallback();
@@ -89,10 +88,10 @@ WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
     this->create_publisher<sensor_msgs::msg::Temperature>("~/temperature", 3);
   voltage_publisher_ = this->create_publisher<std_msgs::msg::Float32>("~/voltage", 3);
 
-  SerialPortOptions serial_port_options;
+  witmotion_imu_driver_core::SerialPortOptions serial_port_options;
   serial_port_options.device_port_name = params_->device_port_name;
   serial_port_options.baud_rate = params_->serial_baud_rate;
-  witmotion_serial_imu_ = std::make_unique<WitmotionSerialImu>(
+  witmotion_serial_imu_ = std::make_unique<witmotion_imu_driver_core::WitmotionSerialImu>(
     io_context_, serial_port_options);
 
   witmotion_serial_imu_->setGravityParam(params_->gravity);

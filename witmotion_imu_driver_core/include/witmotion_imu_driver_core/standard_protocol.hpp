@@ -22,45 +22,21 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/serial_port.hpp>
-
-#include "serial_port_options.hpp"
-
-namespace witmotion_imu_driver
+namespace witmotion_imu_driver_core
 {
-class SerialPort
+namespace packet_type
 {
-public:
-  using Message = std::vector<std::uint8_t>;
-
-  SerialPort() = delete;
-  explicit SerialPort(boost::asio::io_context &, const SerialPortOptions &);
-  ~SerialPort();
-
-  /// @retval true failed serial open
-  /// @retval false serial open successful
-  bool isOpen();
-  /// @retval true failed serial open
-  /// @retval false serial open successful
-  bool open();
-  /// @retval true failed serial write
-  /// @retval false write serial successful
-  bool write(const Message &);
-  /// @retval empty failed serial read
-  /// @retval !empty serial read successful
-  Message read(std::size_t msg_length);
-  /// @retval empty failed serial read
-  /// @retval !empty serial read successful
-  Message read(std::size_t msg_length, const Message & header);
-
-private:
-  const SerialPortOptions options_;
-
-  std::unique_ptr<boost::asio::serial_port> serial_port_;
-};
-}  // namespace witmotion_imu_driver
+  constexpr uint8_t kTime = 0x50;
+  constexpr uint8_t kAcceleration = 0x51;
+  constexpr uint8_t kAngularVelocity = 0x52;
+  constexpr uint8_t kAngle = 0x53;
+  constexpr uint8_t kMagneticField = 0x54;
+  constexpr uint8_t kPort = 0x55;
+  constexpr uint8_t kBarometricAltitude = 0x56;
+  constexpr uint8_t kLatitudeLongitude = 0x57;
+  constexpr uint8_t kGroundSpeed = 0x58;
+  constexpr uint8_t kQuaternion = 0x59;
+  constexpr uint8_t kGpsLocationAccuracy = 0x5A;
+  constexpr uint8_t kRead = 0x5F;
+}  // namespace packet_type
+}  // namespace witmotion_imu_driver_core

@@ -17,6 +17,7 @@ find_package(Boost REQUIRED
     thread
 )
 find_package(Eigen3 REQUIRED)
+find_package(witmotion_imu_driver_core REQUIRED)
 
 ament_auto_find_build_dependencies()
 
@@ -24,8 +25,6 @@ generate_parameter_library(witmotion_standard_protocol_driver_node_params
   src/witmotion_standard_protocol_driver_node_params.yaml
 )
 ament_auto_add_library(${PROJECT_NAME}_components SHARED
-  src/serial_port.cpp
-  src/witmotion_serial_imu.cpp
   src/witmotion_standard_protocol_driver_node.cpp
 )
 target_compile_features(${PROJECT_NAME}_components
@@ -37,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}_components
   Boost::thread
   Eigen3::Eigen
   witmotion_standard_protocol_driver_node_params
+  witmotion_imu_driver_core::witmotion_imu_driver_core
 )
 set_target_properties(${PROJECT_NAME}_components
   PROPERTIES
@@ -54,6 +54,11 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+install(
+  DIRECTORY
+    launch
+  DESTINATION "share/${PROJECT_NAME}"
 )
 
 if(BUILD_TESTING)
