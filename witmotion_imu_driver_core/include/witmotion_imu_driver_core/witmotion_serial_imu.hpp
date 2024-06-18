@@ -31,7 +31,7 @@
 #include "serial_port.hpp"
 #include "serial_port_options.hpp"
 
-namespace witmotion_imu_driver
+namespace witmotion_imu_driver_core
 {
 class WitmotionSerialImu
 {
@@ -90,4 +90,4 @@ private:
 
   void loadSerialMsg(const SerialPort::Message &);
 };
-}  // namespace witmotion_imu_driver
+}  // namespace witmotion_imu_driver_core

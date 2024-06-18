@@ -1,0 +1,14 @@
+# - Config file for the witmotion_imu_driver_core package
+# It defines the following variables
+#  witmotion_imu_driver_core_INCLUDE_DIRS - include directories for FooBar
+#  witmotion_imu_driver_core_LIBRARIES    - libraries to link against
+#  witmotion_imu_driver_core_EXECUTABLE   - the bar executable
+
+set(witmotion_imu_driver_core_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${witmotion_imu_driver_core_DIR}/witmotion_imu_driver_coreTargets.cmake")
+
+# These are IMPORTED targets created by witmotion_imu_driver_coreTargets.cmake
+
+

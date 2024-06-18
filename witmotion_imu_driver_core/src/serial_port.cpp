@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "serial_port.hpp"
+#include <witmotion_imu_driver_core/serial_port.hpp>
 
 #include <stdexcept>
 
@@ -30,7 +30,7 @@
 #include <boost/asio/write.hpp>
 #include <boost/system/error_code.hpp>
 
-namespace witmotion_imu_driver
+namespace witmotion_imu_driver_core
 {
 SerialPort::SerialPort(boost::asio::io_context & io_context, const SerialPortOptions & options)
 : options_(options),
@@ -142,4 +142,4 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
   }
   return msg;
 }
-}  // namespace witmotion_imu_driver
+}  // namespace witmotion_imu_driver_core

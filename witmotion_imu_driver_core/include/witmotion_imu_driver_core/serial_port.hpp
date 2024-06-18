@@ -31,7 +31,7 @@
 
 #include "serial_port_options.hpp"
 
-namespace witmotion_imu_driver
+namespace witmotion_imu_driver_core
 {
 class SerialPort
 {
@@ -63,4 +63,4 @@ private:
 
   std::unique_ptr<boost::asio::serial_port> serial_port_;
 };
-}  // namespace witmotion_imu_driver
+}  // namespace witmotion_imu_driver_core

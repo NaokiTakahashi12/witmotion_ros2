@@ -20,15 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "witmotion_serial_imu.hpp"
+#include <witmotion_imu_driver_core/witmotion_serial_imu.hpp>
 
 #include <memory>
 #include <numeric>
 
-#include "serial_port.hpp"
-#include "serial_port_options.hpp"
+#include <witmotion_imu_driver_core/serial_port.hpp>
+#include <witmotion_imu_driver_core/serial_port_options.hpp>
 
-namespace witmotion_imu_driver
+namespace witmotion_imu_driver_core
 {
 WitmotionSerialImu::WitmotionSerialImu(
   boost::asio::io_context & io_context,
@@ -236,4 +236,4 @@ void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
       break;
   }
 }
-}  // namespace witmotion_imu_driver
+}  // namespace witmotion_imu_driver_core
