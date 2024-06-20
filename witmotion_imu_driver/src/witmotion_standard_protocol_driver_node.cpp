@@ -139,11 +139,14 @@ Eigen::Quaternionf quaternionFromEularAngles(const Eigen::Vector3f & a)
 
 void WitmotionStandardProtocolDriverNode::publishImuStateTimerCallback()
 {
-  const bool updated_acceleration = witmotion_serial_imu_->isUpdatedAcceleration();
-  const bool updated_angular_velocity = witmotion_serial_imu_->isUpdatedAngularVelocity();
-  const bool updated_angle = witmotion_serial_imu_->isUpdatedAngle();
-  const bool allow_publish_imu_topic =
-    updated_acceleration && updated_angular_velocity && updated_angle;
+  using DataType = witmotion_imu_driver_core::WitmotionSerialImu::DataType;
+
+  const bool updated_acceleration = witmotion_serial_imu_->isSensorUpdated(
+    DataType::kAcceleration);
+  const bool updated_angular_velocity = witmotion_serial_imu_->isSensorUpdated(
+    DataType::kAngularVelocity);
+  const bool allow_publish_imu_topic = witmotion_serial_imu_->hasSensorUpdated(
+    DataType::kAcceleration | DataType::kAngularVelocity | DataType::kAngle);
 
   std_msgs::msg::Header msg_header;
   msg_header.frame_id = params_->frame_id;
@@ -168,6 +171,8 @@ void WitmotionStandardProtocolDriverNode::publishImuStateTimerCallback()
     msg->angular_velocity.y = angular_velocity.y();
     msg->angular_velocity.z = angular_velocity.z();
     imu_publisher_->publish(std::move(msg));
+    witmotion_serial_imu_->markAsRead(
+      DataType::kAcceleration | DataType::kAngularVelocity | DataType::kAngle);
   }
   if (temperature_publisher_ && updated_acceleration) {
     auto msg = std::make_unique<sensor_msgs::msg::Temperature>();
@@ -175,11 +180,13 @@ void WitmotionStandardProtocolDriverNode::publishImuStateTimerCallback()
     msg->temperature = witmotion_serial_imu_->getTemperature();
     msg->variance = 0.0;
     temperature_publisher_->publish(std::move(msg));
+    witmotion_serial_imu_->markAsRead(DataType::kAcceleration);
   }
   if (voltage_publisher_ && updated_angular_velocity) {
     auto msg = std::make_unique<std_msgs::msg::Float32>();
     msg->data = witmotion_serial_imu_->getVoltage();
     voltage_publisher_->publish(std::move(msg));
+    witmotion_serial_imu_->markAsRead(DataType::kVoltage);
   }
 }
 }  // namespace witmotion_imu_driver

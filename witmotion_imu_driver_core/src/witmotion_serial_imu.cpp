@@ -36,11 +36,7 @@ WitmotionSerialImu::WitmotionSerialImu(
 : options_(options),
   communication_type_(CommunicationType::kStandard),
   gravity_(9.82F),
-  serial_port_(std::make_unique<SerialPort>(io_context, options)),
-  acceleration_updated_(false),
-  angular_velocity_updated_(false),
-  angle_updated_(false),
-  magnetic_field_updated_(false)
+  serial_port_(std::make_unique<SerialPort>(io_context, options))
 {
   if (connect()) {
     throw std::runtime_error("Failed connect serial port");
@@ -147,25 +143,21 @@ inline void parseMagneticField(Eigen::Vector3f & magnetic_field, const SerialPor
 
 const Eigen::Vector3f & WitmotionSerialImu::getAcceleleration()
 {
-  acceleration_updated_ = false;
   return acceleration_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getAngularVelocity()
 {
-  angular_velocity_updated_ = false;
   return angular_velocity_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getAngle()
 {
-  angle_updated_ = false;
   return angle_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getMagneticField()
 {
-  magnetic_field_updated_ = false;
   return magnetic_field_;
 }
 
@@ -179,24 +171,19 @@ float WitmotionSerialImu::getVoltage() const
   return voltage_;
 }
 
-bool WitmotionSerialImu::isUpdatedAcceleration() const
+void WitmotionSerialImu::markAsRead(DataType data_type)
 {
-  return acceleration_updated_;
+  sensor_updated_ = sensor_updated_ & (DataType::kAll ^ data_type);
 }
 
-bool WitmotionSerialImu::isUpdatedAngularVelocity() const
+bool WitmotionSerialImu::isSensorUpdated(DataType data_type) const
 {
-  return angular_velocity_updated_;
+  return (sensor_updated_ & data_type) == data_type;
 }
 
-bool WitmotionSerialImu::isUpdatedAngle() const
+bool WitmotionSerialImu::hasSensorUpdated(DataType data_type) const
 {
-  return angle_updated_;
-}
-
-bool WitmotionSerialImu::isUpdatedMagneticField() const
-{
-  return magnetic_field_updated_;
+  return (sensor_updated_ & data_type) > DataType(0);
 }
 
 void WitmotionSerialImu::procSerialStream()
@@ -223,22 +210,53 @@ void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
     case standard::kTypeAccelerationHeader:
       standard::parseAcceleration(acceleration_, temperature_, msg);
       acceleration_ *= gravity_;
-      acceleration_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAcceleration | DataType::kTemperature;
       break;
     case standard::kTypeAngularVelocityHeader:
       standard::parseAngularVelocity(angular_velocity_, voltage_, msg);
-      angular_velocity_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAngularVelocity | DataType::kVoltage;
       break;
     case standard::kTypeAngleHeader:
       standard::parseAngle(angle_, version_, msg);
-      angle_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAngle;
       break;
     case standard::kTypeMagneticFieldHeader:
       standard::parseMagneticField(magnetic_field_, msg);
-      magnetic_field_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kMagneticField;
       break;
     default:
+      return;
       break;
   }
+}
+
+WitmotionSerialImu::DataType operator|(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr | ll);
+}
+
+WitmotionSerialImu::DataType operator&(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr & ll);
+}
+
+WitmotionSerialImu::DataType operator^(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr ^ ll);
+}
+
+WitmotionSerialImu::DataType operator!(WitmotionSerialImu::DataType v)
+{
+  const auto vv = std::underlying_type<WitmotionSerialImu::DataType>::type(v);
+  return WitmotionSerialImu::DataType(!vv);
 }
 }  // namespace witmotion_imu_driver_core
