@@ -48,6 +48,7 @@ public:
   ~WitmotionSerialImu() = default;
 
   bool connect();
+  void disconnect();
   bool isConnected();
 
   float getGravityParam() const;

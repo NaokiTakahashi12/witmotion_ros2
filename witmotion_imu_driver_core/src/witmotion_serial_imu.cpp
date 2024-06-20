@@ -52,6 +52,11 @@ bool WitmotionSerialImu::connect()
   return serial_port_->open();
 }
 
+void WitmotionSerialImu::disconnect()
+{
+  serial_port_->close();
+}
+
 bool WitmotionSerialImu::isConnected()
 {
   return serial_port_->isOpen();

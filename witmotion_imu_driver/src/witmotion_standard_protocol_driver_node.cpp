@@ -117,6 +117,7 @@ WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
 WitmotionStandardProtocolDriverNode::~WitmotionStandardProtocolDriverNode()
 {
   if (witmotion_serial_imu_) {
+    witmotion_serial_imu_->disconnect();
     witmotion_serial_imu_.reset();
   }
   RCLCPP_INFO_STREAM(this->get_logger(), "Finish " << this->get_name());
