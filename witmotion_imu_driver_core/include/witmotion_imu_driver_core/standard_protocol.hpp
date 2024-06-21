@@ -24,8 +24,21 @@
 
 namespace witmotion_imu_driver_core
 {
-namespace packet_type
+namespace std_packet_size
 {
+  constexpr std::size_t kMsgHeader = 2;
+  constexpr std::size_t kStreamMsg = 11;
+}  // namespace std_packet_size
+namespace std_packet_index
+{
+  constexpr unsigned int kMsgType = 1;
+  constexpr unsigned int kMsgCrc = 10;
+}  // namespace std_packet_index
+
+namespace std_packet_type
+{
+  constexpr uint8_t kStdHeader = 0x55;
+
   constexpr uint8_t kTime = 0x50;
   constexpr uint8_t kAcceleration = 0x51;
   constexpr uint8_t kAngularVelocity = 0x52;
@@ -38,5 +51,5 @@ namespace packet_type
   constexpr uint8_t kQuaternion = 0x59;
   constexpr uint8_t kGpsLocationAccuracy = 0x5A;
   constexpr uint8_t kRead = 0x5F;
-}  // namespace packet_type
+}  // namespace std_packet_type
 }  // namespace witmotion_imu_driver_core

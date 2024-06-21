@@ -68,7 +68,7 @@ private:
 WitmotionStandardProtocolDriverNode::WitmotionStandardProtocolDriverNode(
   const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("witmotion_standard_protocol_driver", node_options),
-
+  io_context_(),
   imu_publisher_(nullptr),
   proc_imu_state_timer_(nullptr),
   publish_imu_state_timer_(nullptr),

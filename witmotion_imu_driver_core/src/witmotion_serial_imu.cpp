@@ -27,6 +27,7 @@
 
 #include <witmotion_imu_driver_core/serial_port.hpp>
 #include <witmotion_imu_driver_core/serial_port_options.hpp>
+#include <witmotion_imu_driver_core/standard_protocol.hpp>
 
 namespace witmotion_imu_driver_core
 {
@@ -70,26 +71,6 @@ void WitmotionSerialImu::setGravityParam(float gravity)
 
 namespace standard
 {
-constexpr unsigned int kMessageHeaderIndex = 0;
-constexpr unsigned int kMessageTypeHeaderIndex = 1;
-constexpr unsigned int kMessageCrcIndex = 10;
-constexpr std::size_t kMessageHeaderSize = 2;
-constexpr std::uint8_t kTypeProtocolHeader = 0x55;
-constexpr std::uint8_t kTypeAccelerationHeader = 0x51;
-constexpr std::uint8_t kTypeAngularVelocityHeader = 0x52;
-constexpr std::uint8_t kTypeAngleHeader = 0x53;
-constexpr std::uint8_t kTypeMagneticFieldHeader = 0x54;
-
-SerialPort::Message getRequestUnlock()
-{
-  return {0xFF, 0xAA, 0x64, 0x88, 0xB5};
-}
-
-SerialPort::Message getRequestSave()
-{
-  return {0xFF, 0xAA, 0x00, 0x00, 0x00};
-}
-
 inline float convertDoubleByteToFloat(const std::uint8_t a, const std::uint8_t b)
 {
   const std::uint16_t c = (a << 8) | b;
@@ -103,7 +84,7 @@ inline Eigen::Vector3f parseVector3(const SerialPort::Message & msg)
   constexpr unsigned int kVectorDimention = 3;
   Eigen::Vector3f vec;
   for (unsigned int i = 0; i < kVectorDimention; ++i) {
-    const unsigned int head = 2 * i + kMessageHeaderSize;
+    const unsigned int head = 2 * i + std_packet_size::kMsgHeader;
     vec(i) = convertDoubleByteToFloat(msg[head + 1], msg[head]);
   }
   return vec;
@@ -190,10 +171,9 @@ void WitmotionSerialImu::procSerialStream()
 {
   if (communication_type_ == CommunicationType::kStandard) {
     constexpr std::size_t kProcMsgs = 4;
-    constexpr std::size_t kMsgLength = 11;
-    static SerialPort::Message header_msg{standard::kTypeProtocolHeader};
+    static SerialPort::Message header_msg{std_packet_type::kStdHeader};
     for (unsigned int i = 0; i < kProcMsgs; ++i) {
-      loadSerialMsg(serial_port_->read(kMsgLength, header_msg));
+      loadSerialMsg(serial_port_->read(std_packet_size::kStreamMsg, header_msg));
     }
   } else if (communication_type_ == CommunicationType::kModbus) {
     throw std::logic_error("Not supported Modbus");
@@ -203,29 +183,28 @@ void WitmotionSerialImu::procSerialStream()
 void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
 {
   const std::uint8_t crc = std::accumulate(msg.cbegin(), msg.cend() - 1, 0U);
-  if (crc != msg[standard::kMessageCrcIndex]) {
+  if (crc != msg[std_packet_index::kMsgCrc]) {
     return;
   }
-  switch (msg[standard::kMessageTypeHeaderIndex]) {
-    case standard::kTypeAccelerationHeader:
+  switch (msg[std_packet_index::kMsgType]) {
+    case std_packet_type::kAcceleration:
       standard::parseAcceleration(acceleration_, temperature_, msg);
       acceleration_ *= gravity_;
       sensor_updated_ = sensor_updated_ | DataType::kAcceleration | DataType::kTemperature;
       break;
-    case standard::kTypeAngularVelocityHeader:
+    case std_packet_type::kAngularVelocity:
       standard::parseAngularVelocity(angular_velocity_, voltage_, msg);
       sensor_updated_ = sensor_updated_ | DataType::kAngularVelocity | DataType::kVoltage;
       break;
-    case standard::kTypeAngleHeader:
+    case std_packet_type::kAngle:
       standard::parseAngle(angle_, version_, msg);
       sensor_updated_ = sensor_updated_ | DataType::kAngle;
       break;
-    case standard::kTypeMagneticFieldHeader:
+    case std_packet_type::kMagneticField:
       standard::parseMagneticField(magnetic_field_, msg);
       sensor_updated_ = sensor_updated_ | DataType::kMagneticField;
       break;
     default:
-      return;
       break;
   }
 }
