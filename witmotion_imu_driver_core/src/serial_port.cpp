@@ -58,6 +58,13 @@ bool SerialPort::isOpen()
   return serial_port_->is_open();
 }
 
+void SerialPort::close()
+{
+  if (isOpen()) {
+    serial_port_->close();
+  }
+}
+
 bool SerialPort::open()
 {
   if (isOpen()) {
@@ -110,7 +117,9 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
   Message msg;
   msg.resize(msg_length);
 
-  if (!isOpen()) {
+  if (header.empty()) {
+    return msg;
+  } else if (!isOpen()) {
     return msg;
   }
   unsigned int read_counter = 0;

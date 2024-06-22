@@ -45,6 +45,8 @@ public:
   /// @retval true failed serial open
   /// @retval false serial open successful
   bool isOpen();
+
+  void close();
   /// @retval true failed serial open
   /// @retval false serial open successful
   bool open();

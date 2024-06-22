@@ -27,6 +27,7 @@
 
 #include <witmotion_imu_driver_core/serial_port.hpp>
 #include <witmotion_imu_driver_core/serial_port_options.hpp>
+#include <witmotion_imu_driver_core/standard_protocol.hpp>
 
 namespace witmotion_imu_driver_core
 {
@@ -36,11 +37,7 @@ WitmotionSerialImu::WitmotionSerialImu(
 : options_(options),
   communication_type_(CommunicationType::kStandard),
   gravity_(9.82F),
-  serial_port_(std::make_unique<SerialPort>(io_context, options)),
-  acceleration_updated_(false),
-  angular_velocity_updated_(false),
-  angle_updated_(false),
-  magnetic_field_updated_(false)
+  serial_port_(std::make_unique<SerialPort>(io_context, options))
 {
   if (connect()) {
     throw std::runtime_error("Failed connect serial port");
@@ -50,6 +47,11 @@ WitmotionSerialImu::WitmotionSerialImu(
 bool WitmotionSerialImu::connect()
 {
   return serial_port_->open();
+}
+
+void WitmotionSerialImu::disconnect()
+{
+  serial_port_->close();
 }
 
 bool WitmotionSerialImu::isConnected()
@@ -69,26 +71,6 @@ void WitmotionSerialImu::setGravityParam(float gravity)
 
 namespace standard
 {
-constexpr unsigned int kMessageHeaderIndex = 0;
-constexpr unsigned int kMessageTypeHeaderIndex = 1;
-constexpr unsigned int kMessageCrcIndex = 10;
-constexpr std::size_t kMessageHeaderSize = 2;
-constexpr std::uint8_t kTypeProtocolHeader = 0x55;
-constexpr std::uint8_t kTypeAccelerationHeader = 0x51;
-constexpr std::uint8_t kTypeAngularVelocityHeader = 0x52;
-constexpr std::uint8_t kTypeAngleHeader = 0x53;
-constexpr std::uint8_t kTypeMagneticFieldHeader = 0x54;
-
-SerialPort::Message getRequestUnlock()
-{
-  return {0xFF, 0xAA, 0x64, 0x88, 0xB5};
-}
-
-SerialPort::Message getRequestSave()
-{
-  return {0xFF, 0xAA, 0x00, 0x00, 0x00};
-}
-
 inline float convertDoubleByteToFloat(const std::uint8_t a, const std::uint8_t b)
 {
   const std::uint16_t c = (a << 8) | b;
@@ -102,7 +84,7 @@ inline Eigen::Vector3f parseVector3(const SerialPort::Message & msg)
   constexpr unsigned int kVectorDimention = 3;
   Eigen::Vector3f vec;
   for (unsigned int i = 0; i < kVectorDimention; ++i) {
-    const unsigned int head = 2 * i + kMessageHeaderSize;
+    const unsigned int head = 2 * i + std_packet_size::kMsgHeader;
     vec(i) = convertDoubleByteToFloat(msg[head + 1], msg[head]);
   }
   return vec;
@@ -142,25 +124,21 @@ inline void parseMagneticField(Eigen::Vector3f & magnetic_field, const SerialPor
 
 const Eigen::Vector3f & WitmotionSerialImu::getAcceleleration()
 {
-  acceleration_updated_ = false;
   return acceleration_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getAngularVelocity()
 {
-  angular_velocity_updated_ = false;
   return angular_velocity_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getAngle()
 {
-  angle_updated_ = false;
   return angle_;
 }
 
 const Eigen::Vector3f & WitmotionSerialImu::getMagneticField()
 {
-  magnetic_field_updated_ = false;
   return magnetic_field_;
 }
 
@@ -174,34 +152,28 @@ float WitmotionSerialImu::getVoltage() const
   return voltage_;
 }
 
-bool WitmotionSerialImu::isUpdatedAcceleration() const
+void WitmotionSerialImu::markAsRead(DataType data_type)
 {
-  return acceleration_updated_;
+  sensor_updated_ = sensor_updated_ & (DataType::kAll ^ data_type);
 }
 
-bool WitmotionSerialImu::isUpdatedAngularVelocity() const
+bool WitmotionSerialImu::isSensorUpdated(DataType data_type) const
 {
-  return angular_velocity_updated_;
+  return (sensor_updated_ & data_type) == data_type;
 }
 
-bool WitmotionSerialImu::isUpdatedAngle() const
+bool WitmotionSerialImu::hasSensorUpdated(DataType data_type) const
 {
-  return angle_updated_;
-}
-
-bool WitmotionSerialImu::isUpdatedMagneticField() const
-{
-  return magnetic_field_updated_;
+  return (sensor_updated_ & data_type) > DataType(0);
 }
 
 void WitmotionSerialImu::procSerialStream()
 {
   if (communication_type_ == CommunicationType::kStandard) {
     constexpr std::size_t kProcMsgs = 4;
-    constexpr std::size_t kMsgLength = 11;
-    static SerialPort::Message header_msg{standard::kTypeProtocolHeader};
+    static SerialPort::Message header_msg{std_packet_type::kStdHeader};
     for (unsigned int i = 0; i < kProcMsgs; ++i) {
-      loadSerialMsg(serial_port_->read(kMsgLength, header_msg));
+      loadSerialMsg(serial_port_->read(std_packet_size::kStreamMsg, header_msg));
     }
   } else if (communication_type_ == CommunicationType::kModbus) {
     throw std::logic_error("Not supported Modbus");
@@ -211,29 +183,59 @@ void WitmotionSerialImu::procSerialStream()
 void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
 {
   const std::uint8_t crc = std::accumulate(msg.cbegin(), msg.cend() - 1, 0U);
-  if (crc != msg[standard::kMessageCrcIndex]) {
+  if (crc != msg[std_packet_index::kMsgCrc]) {
     return;
   }
-  switch (msg[standard::kMessageTypeHeaderIndex]) {
-    case standard::kTypeAccelerationHeader:
+  switch (msg[std_packet_index::kMsgType]) {
+    case std_packet_type::kAcceleration:
       standard::parseAcceleration(acceleration_, temperature_, msg);
       acceleration_ *= gravity_;
-      acceleration_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAcceleration | DataType::kTemperature;
       break;
-    case standard::kTypeAngularVelocityHeader:
+    case std_packet_type::kAngularVelocity:
       standard::parseAngularVelocity(angular_velocity_, voltage_, msg);
-      angular_velocity_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAngularVelocity | DataType::kVoltage;
       break;
-    case standard::kTypeAngleHeader:
+    case std_packet_type::kAngle:
       standard::parseAngle(angle_, version_, msg);
-      angle_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kAngle;
       break;
-    case standard::kTypeMagneticFieldHeader:
+    case std_packet_type::kMagneticField:
       standard::parseMagneticField(magnetic_field_, msg);
-      magnetic_field_updated_ = true;
+      sensor_updated_ = sensor_updated_ | DataType::kMagneticField;
       break;
     default:
       break;
   }
+}
+
+WitmotionSerialImu::DataType operator|(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr | ll);
+}
+
+WitmotionSerialImu::DataType operator&(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr & ll);
+}
+
+WitmotionSerialImu::DataType operator^(
+  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
+{
+  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
+  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
+  return WitmotionSerialImu::DataType(rr ^ ll);
+}
+
+WitmotionSerialImu::DataType operator!(WitmotionSerialImu::DataType v)
+{
+  const auto vv = std::underlying_type<WitmotionSerialImu::DataType>::type(v);
+  return WitmotionSerialImu::DataType(!vv);
 }
 }  // namespace witmotion_imu_driver_core

@@ -28,7 +28,7 @@ find_package(Eigen3 REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 set(public_headers
-  include/witmotion_imu_driver_core/witmoiton_imu_driver_core.hpp
+  include/witmotion_imu_driver_core/witmotion_imu_driver_core.hpp
   include/witmotion_imu_driver_core/standard_protocol.hpp
   include/witmotion_imu_driver_core/serial_port.hpp
   include/witmotion_imu_driver_core/serial_port_options.hpp
