@@ -152,19 +152,19 @@ float WitmotionSerialImu::getVoltage() const
   return voltage_;
 }
 
-void WitmotionSerialImu::markAsRead(DataType data_type)
+void WitmotionSerialImu::markAsRead(std::uint8_t data_type)
 {
   sensor_updated_ = sensor_updated_ & (DataType::kAll ^ data_type);
 }
 
-bool WitmotionSerialImu::isSensorUpdated(DataType data_type) const
+bool WitmotionSerialImu::isSensorUpdated(std::uint8_t data_type) const
 {
   return (sensor_updated_ & data_type) == data_type;
 }
 
-bool WitmotionSerialImu::hasSensorUpdated(DataType data_type) const
+bool WitmotionSerialImu::hasSensorUpdated(std::uint8_t data_type) const
 {
-  return (sensor_updated_ & data_type) > DataType(0);
+  return (sensor_updated_ & data_type) > 0;
 }
 
 void WitmotionSerialImu::procSerialStream()
@@ -207,35 +207,5 @@ void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
     default:
       break;
   }
-}
-
-WitmotionSerialImu::DataType operator|(
-  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
-{
-  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
-  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
-  return WitmotionSerialImu::DataType(rr | ll);
-}
-
-WitmotionSerialImu::DataType operator&(
-  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
-{
-  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
-  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
-  return WitmotionSerialImu::DataType(rr & ll);
-}
-
-WitmotionSerialImu::DataType operator^(
-  WitmotionSerialImu::DataType l, WitmotionSerialImu::DataType r)
-{
-  const auto rr = std::underlying_type<WitmotionSerialImu::DataType>::type(l);
-  const auto ll = std::underlying_type<WitmotionSerialImu::DataType>::type(r);
-  return WitmotionSerialImu::DataType(rr ^ ll);
-}
-
-WitmotionSerialImu::DataType operator!(WitmotionSerialImu::DataType v)
-{
-  const auto vv = std::underlying_type<WitmotionSerialImu::DataType>::type(v);
-  return WitmotionSerialImu::DataType(!vv);
 }
 }  // namespace witmotion_imu_driver_core
