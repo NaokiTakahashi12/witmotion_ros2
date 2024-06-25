@@ -74,7 +74,7 @@ bool SerialPort::open()
   serial_port_->open(options_.device_port_name, error_code);
 
   if (error_code) {
-    return true;
+    throw std::runtime_error(error_code.message());
   }
   serial_port_->set_option(boost::asio::serial_port_base::baud_rate(options_.baud_rate));
   return false;
@@ -85,7 +85,14 @@ bool SerialPort::write(const Message & msg)
   if (!isOpen()) {
     return true;
   }
-  boost::asio::write(*serial_port_, boost::asio::buffer(msg.data(), msg.size()));
+  boost::system::error_code error_code;
+  boost::asio::write(
+    *serial_port_,
+    boost::asio::buffer(msg.data(), msg.size()),
+    error_code);
+  if (error_code) {
+    return false;
+  }
   return false;
 }
 
@@ -95,12 +102,19 @@ SerialPort::Message SerialPort::read(std::size_t msg_length)
   if (!isOpen()) {
     return msg;
   }
-  msg.resize(msg_length);
   unsigned int read_counter = 0;
+  boost::system::error_code error_code;
+  msg.resize(msg_length);
 
   while (true) {
     std::uint8_t read_byte = 0;
-    boost::asio::read(*serial_port_, boost::asio::buffer(&read_byte, sizeof(std::uint8_t)));
+    boost::asio::read(
+      *serial_port_,
+      boost::asio::buffer(&read_byte, sizeof(std::uint8_t)),
+      error_code);
+    if (error_code) {
+      throw std::runtime_error(error_code.message());
+    }
     msg[read_counter] = read_byte;
     read_counter++;
 
@@ -115,7 +129,6 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
 {
   constexpr unsigned int kMaxContinueCounter = 1024;
   Message msg;
-  msg.resize(msg_length);
 
   if (header.empty()) {
     return msg;
@@ -125,6 +138,8 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
   unsigned int read_counter = 0;
   unsigned int continue_counter = 0;
   bool found_start = false;
+  boost::system::error_code error_code;
+  msg.resize(msg_length);
 
   while (true) {
     if (continue_counter > kMaxContinueCounter) {
@@ -134,7 +149,13 @@ SerialPort::Message SerialPort::read(std::size_t msg_length, const Message & hea
       break;
     }
     std::uint8_t read_byte = 0;
-    boost::asio::read(*serial_port_, boost::asio::buffer(&read_byte, sizeof(std::uint8_t)));
+    boost::asio::read(
+      *serial_port_,
+      boost::asio::buffer(&read_byte, sizeof(std::uint8_t)),
+      error_code);
+    if (error_code) {
+      throw std::runtime_error(error_code.message());
+    }
     msg[read_counter] = read_byte;
 
     if (found_start) {
