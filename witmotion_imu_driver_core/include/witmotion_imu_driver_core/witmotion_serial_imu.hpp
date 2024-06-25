@@ -41,15 +41,15 @@ public:
     kStandard,
     kModbus,  /// @todo(Naoki Takahashi) not support
   };
-  enum class DataType : std::uint8_t
+  struct DataType
   {
-    kAcceleration = 1 << 0,
-    kAngularVelocity = 1 << 1,
-    kAngle = 1 << 2,
-    kMagneticField = 1 << 3,
-    kTemperature = 1 << 4,
-    kVoltage = 1 << 5,
-    kAll = 0xFF,
+    static constexpr std::uint8_t kAcceleration = 1 << 0;
+    static constexpr std::uint8_t kAngularVelocity = 1 << 1;
+    static constexpr std::uint8_t kAngle = 1 << 2;
+    static constexpr std::uint8_t kMagneticField = 1 << 3;
+    static constexpr std::uint8_t kTemperature = 1 << 4;
+    static constexpr std::uint8_t kVoltage = 1 << 5;
+    static constexpr std::uint8_t kAll = 0xFF;
   };
 
   WitmotionSerialImu() = delete;
@@ -71,9 +71,9 @@ public:
   float getTemperature() const;
   float getVoltage() const;
 
-  void markAsRead(DataType);
-  bool isSensorUpdated(DataType) const;
-  bool hasSensorUpdated(DataType) const;
+  void markAsRead(std::uint8_t);
+  bool isSensorUpdated(std::uint8_t) const;
+  bool hasSensorUpdated(std::uint8_t) const;
 
   void procSerialStream();
 
@@ -93,13 +93,8 @@ private:
   std::uint16_t version_{};
   Eigen::Vector3f magnetic_field_;
 
-  DataType sensor_updated_;
+  std::uint8_t sensor_updated_;
 
   void loadSerialMsg(const SerialPort::Message &);
 };
-
-WitmotionSerialImu::DataType operator|(WitmotionSerialImu::DataType, WitmotionSerialImu::DataType);
-WitmotionSerialImu::DataType operator&(WitmotionSerialImu::DataType, WitmotionSerialImu::DataType);
-WitmotionSerialImu::DataType operator^(WitmotionSerialImu::DataType, WitmotionSerialImu::DataType);
-WitmotionSerialImu::DataType operator!(WitmotionSerialImu::DataType);
 }  // namespace witmotion_imu_driver_core
