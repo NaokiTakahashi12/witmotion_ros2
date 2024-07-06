@@ -40,8 +40,10 @@ witmotion_standard_protocol_driver_node:
     type: double
     default_value: 9.82
   proc_serial_frequency:
+    desctoption: DO NOT EDIT; serial message processiong frequency
     type: double
-    default_value: 1000.0
+    default_value: 1010.0
+    read_only: true
     validation:
       gt<>: 0
   publish_frequency:
