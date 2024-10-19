@@ -172,19 +172,25 @@ void WitmotionSerialImu::procSerialStream()
   if (communication_type_ == CommunicationType::kStandard) {
     constexpr std::size_t kProcMsgs = 4;
     static SerialPort::Message header_msg{std_packet_type::kStdHeader};
+
     for (unsigned int i = 0; i < kProcMsgs; ++i) {
-      loadSerialMsg(serial_port_->read(std_packet_size::kStreamMsg, header_msg));
+      bool retry;
+      do {
+        retry = WitmotionSerialReadState::SUCCESS != loadSerialMsg(
+          serial_port_->read(std_packet_size::kStreamMsg, header_msg));
+      }
+      while(retry);
     }
   } else if (communication_type_ == CommunicationType::kModbus) {
     throw std::logic_error("Not supported Modbus");
   }
 }
 
-void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
+WitmotionSerialReadState WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
 {
   const std::uint8_t crc = std::accumulate(msg.cbegin(), msg.cend() - 1, 0U);
   if (crc != msg[std_packet_index::kMsgCrc]) {
-    return;
+    return WitmotionSerialReadState::INVARID_CRC;
   }
   switch (msg[std_packet_index::kMsgType]) {
     case std_packet_type::kAcceleration:
@@ -205,7 +211,8 @@ void WitmotionSerialImu::loadSerialMsg(const SerialPort::Message & msg)
       sensor_updated_ = sensor_updated_ | DataType::kMagneticField;
       break;
     default:
-      break;
+      return WitmotionSerialReadState::INVARID_MSG_TYPE;
   }
+  return WitmotionSerialReadState::SUCCESS;
 }
 }  // namespace witmotion_imu_driver_core
