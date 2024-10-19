@@ -33,6 +33,13 @@
 
 namespace witmotion_imu_driver_core
 {
+enum class WitmotionSerialReadState : std::uint8_t
+{
+  SUCCESS,
+  INVARID_MSG_TYPE,
+  INVARID_CRC
+};
+
 class WitmotionSerialImu
 {
 public:
@@ -95,6 +102,6 @@ private:
 
   std::uint8_t sensor_updated_;
 
-  void loadSerialMsg(const SerialPort::Message &);
+  WitmotionSerialReadState loadSerialMsg(const SerialPort::Message &);
 };
 }  // namespace witmotion_imu_driver_core
